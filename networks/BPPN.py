@@ -350,9 +350,9 @@ class SGAFM(nn.Module):
         super(SGAFM, self).__init__()
         self.conv1 = nn.Sequential(conv1x1(2*in_chn, in_chn,'GN',16), nn.Conv2d(in_chn, in_chn,3,1,1))
         self.conv2 = nn.Sequential(conv1x1(2*in_chn, in_chn,'GN',16), nn.Conv2d(in_chn, in_chn,3,1,1))
-        # dilation 必须是1,2,4
+        
         self.ConvBlock1 = nn.Sequential(conv1x1(2*in_chn, in_chn,'GN',16))
-        # lightDASP(norm, act, in_chn1//2)
+        
 
     def forward(self, input1,input2 ):
         x  = torch.cat([input1, input2], dim=1)  # 64+64-->128
@@ -379,7 +379,7 @@ class Pyramid_Decoder(nn.Module):
         self.downChn4 = conv1x1(in_ch4, 512,'GN',32)
         
         self.ConvPM = ConvPatchMerging(dim=64, norm_layer=nn.LayerNorm, postnorm=True)
-        #  采样
+        
         self.conv1_2_1 = nn.Sequential(conv3x3(128, 64,'GN',64//4))
         self.conv1_2_2 = nn.Sequential(PatchMerging(dim=64, norm_layer=nn.LayerNorm, postnorm=True), conv3x3(128, 128,'GN',128//8))
         self.conv1_3_1 = nn.Sequential(conv3x3(64*3, 64*2,'GN',128//8), conv3x3(64*2, 64,'GN',64//4))
@@ -398,7 +398,7 @@ class Pyramid_Decoder(nn.Module):
         self.conv3_1_2 = nn.Sequential(conv3x3(320, 256,'GN',256//16))
         self.conv3_2   = nn.Sequential(conv3x3(256*4, 256*2,'GN', 512//32), conv3x3(256*2, 256,'GN',256//16))
         # self.conv3_2_1 = nn.Sequential(nn.PixelShuffle(2), conv3x3(48, 32),conv3x3(32, 16))
-        self.conv3_2_1 = nn.Sequential(nn.PixelShuffle(2), conv3x3(64, 128,'GN',128//8)) # 因为内存不够用
+        self.conv3_2_1 = nn.Sequential(nn.PixelShuffle(2), conv3x3(64, 128,'GN',128//8)) 
         self.conv4_1_1 = nn.Sequential(nn.PixelShuffle(2),conv3x3(128, 256,'GN',256//16))
 
         self.fb1 = MCFEM(dim=128, out_channel=128, attn_drop=0.01)
@@ -440,7 +440,7 @@ class Pyramid_Decoder(nn.Module):
     def forward(self, x_1, x_2, x_3, x_4,lap_list):
         
         rgb_lv4, rgb_lv3, rgb_lv2, rgb_lv1 = lap_list[0], lap_list[1], lap_list[2], lap_list[3]
-        # 对transformer第4层数据进行上采样
+        
         """
         x    :torch.Size([2, 3, 352, 704]), kitti dataset
         conv1:torch.Size([2, 64, 88, 176]), 1/4
@@ -458,8 +458,8 @@ class Pyramid_Decoder(nn.Module):
         feat1_2   = self.frm1(x_1, feat2_1_1)
         
         # 计算feature2_2
-        feat3_1_1 = self.conv3_1_1(x_3)         # 需要升size，64 H/8, W/8
-        feat1_2_2 = self.conv1_2_2(feat1_2)     # 需要降size，64 H/8, W/8
+        feat3_1_1 = self.conv3_1_1(x_3)         
+        feat1_2_2 = self.conv1_2_2(feat1_2)     
         feat2_1_2 = x_2
         feat2_2_t = self.fb1(feat3_1_1,feat2_1_2,feat1_2_2) # 128*4
         feat2_2   = self.conv2_2(feat2_2_t) # 128
@@ -505,7 +505,7 @@ class Pyramid_Decoder(nn.Module):
         att       = self.last(torch.cat([att1_4_up,att1_up,rgb_lv1],dim=1)) # 1/1,chn:64+64-->32
         
         return att,att1_up,att2_up,att3_up
-# 重新优化了attention机制
+
 
 
 """The Bi-directional Pyramid Policy Network"""
@@ -588,7 +588,7 @@ class BPPN(nn.Module):
 
     def forward(self, imgs):
         """ [128, 256, 512, 1024] 128*88*280, 256*144*140, 512*22*70, 1024*11*35   """
-        enc_feats   = self.backbone(imgs) #处理完后会有4组特征
+        enc_feats   = self.backbone(imgs) 
         # out, att4, att3, att2 = self.decoder(enc_feats[0],enc_feats[1],enc_feats[2],enc_feats[3])
         
 
